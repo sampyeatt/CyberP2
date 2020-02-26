@@ -15,12 +15,20 @@
 
 import socket
 import os
+import sys
+import subprocess
+import argparse
 
 
 host = "localhost"
 port = 10001
 
 
+def key_present():
+   if "id_rsa" in os.listdir(PRIV_SSH_DIR):
+        return True
+    else:
+        return False
 # A helper function that you may find useful for AES encryption
 # Is this the best way to pad a message?!?!
 def pad_message(message):
@@ -29,6 +37,11 @@ def pad_message(message):
 
 # TODO: Generate a cryptographically random AES key
 def generate_key():
+    os.chdir(PRIV_SSH_DIR)
+    if key_present();
+        show("Key already exists")
+    else
+        subprocess.call('ssh-keygen',shell=True)
     # TODO: Implement this function
     pass
 
