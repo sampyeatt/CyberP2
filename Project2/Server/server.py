@@ -8,12 +8,16 @@
         is provided as a sanity check)
 
     Put your team members' names:
+    John Pyeatt
+    Margad Batamgalan
+    Will Walker
 
 
 
 """
 
 import socket
+import cryptography
 
 host = "localhost"
 port = 10001
@@ -27,19 +31,23 @@ def pad_message(message):
 # Write a function that decrypts a message using the server's private key
 def decrypt_key(session_key):
     # TODO: Implement this function
+
     pass
 
 
 # Write a function that decrypts a message using the session key
 def decrypt_message(client_message, session_key):
     # TODO: Implement this function
-    pass
+    mess = session_key.decrypt(client_message)
+    return mess
 
 
 # Encrypt a message using the session key
 def encrypt_message(message, session_key):
     # TODO: Implement this function
-    pass
+    mess = message.encode()
+    enc = session_key.encrypt(mess)
+    return enc
 
 
 # Receive 1024 bytes from the client
