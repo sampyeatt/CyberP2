@@ -18,8 +18,11 @@ import os
 import sys
 import subprocess
 import argparse
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.backends import default_backend
 
-
+PRIV_SSH_DIR = os.getcwd() + "/Project2/Project2/priv_ssh_dir"
 host = "localhost"
 port = 10001
 
@@ -31,38 +34,47 @@ def key_present():
         return False
 # A helper function that you may find useful for AES encryption
 # Is this the best way to pad a message?!?!
+
+
 def pad_message(message):
-    return message + " "*((16-len(message))%16)
+    return message + " "*((16-len(message)) % 16)
 
 
 # TODO: Generate a cryptographically random AES key
 def generate_key():
+    print(os.getcwd())
     os.chdir(PRIV_SSH_DIR)
     if key_present():
-        show("Key already exists")
+        print("Key already exists")
     else:
-        subprocess.call('ssh-keygen',shell=True)
+        key = rsa.generate_private_key(backend=default_backend(), public_exponent=65537,
+                                       key_size=2048)
+        print("testing key is", key)
+    return key
     # TODO: Implement this function
-    pass
 
 
 # Takes an AES session key and encrypts it using the appropriate
 # key and return the value
 def encrypt_handshake(session_key):
     # TODO: Implement this function
+
     pass
 
 
 # Encrypts the message using AES. Same as server function
 def encrypt_message(message, session_key):
     # TODO: Implement this function
-    pass
+    mess = message.encode()
+    enc = session_key.encrypt(mess)
+    return enc
 
 
 # Decrypts the message using AES. Same as server function
 def decrypt_message(message, session_key):
     # TODO: Implement this function
-    pass
+    mess = session_key.decrypt(message)
+    return mess
 
 
 # Sends a message over TCP

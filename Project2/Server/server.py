@@ -119,6 +119,7 @@ def main():
                 # TODO: Encrypt response to client
 
                 # Send encrypted response
+                ciphertext_response = "testing"
                 send_message(connection, ciphertext_response)
             finally:
                 # Clean up the connection
