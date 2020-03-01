@@ -25,6 +25,8 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 import Crypto.Cipher.AES as AES
 import random
+from cryptography.fernet import Fernet
+
 
 PRIV_SSH_DIR = os.getcwd() + "/Project2/Project2/priv_ssh_dir"
 host = "localhost"
@@ -54,11 +56,16 @@ def generate_key():
         print("Key already exists")
         return os.urandom(32)
     else:
-        subprocess.call('ssh-keygen', shell=True)
-        subprocess.call(
-            'ssh-keygen -f id_rsa -e -m pem > id_rsa.pem', shell=True)
+        #subprocess.call('ssh-keygen', shell=True)
+        #subprocess.call(
+        #    'ssh-keygen -f id_rsa -e -m pem > id_rsa.pem', shell=True)
         # subprocess.call('ssh-keygen -f id_rsa -e -m pem > id_rsa.pem', shell=True)
-        return os.urandom(32)
+        key = Fernet.generate_key()
+        f = Fernet(key)
+        return f
+        #return os.urandom(32)
+
+
 
 
 # Takes an AES session key and encrypts it using the appropriate
