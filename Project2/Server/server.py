@@ -128,10 +128,16 @@ def main():
                 ciphertext_message = receive_message(connection)
 
                 # TODO: Decrypt message from client
+                clientMes = decrypt_message(ciphertext_message,plaintext_key)
 
                 # TODO: Split response from user into the username and password
 
+                print("Client message to be parsed",clientMes)
+                # TODO: parse the message
+
                 # TODO: Encrypt response to client
+                mess = encrypt_message(ciphertext_message, plaintext_key)
+                send_message(sock, mess)
 
                 # Send encrypted response
                 ciphertext_response = "testing"
