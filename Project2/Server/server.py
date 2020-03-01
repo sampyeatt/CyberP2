@@ -18,6 +18,15 @@
 
 import socket
 import cryptography
+import os
+import sys
+import subprocess
+import argparse
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.backends import default_backend
+import Crypto.Cipher.AES as AES
+import random
 
 host = "localhost"
 port = 10001
@@ -31,27 +40,30 @@ def pad_message(message):
 # Write a function that decrypts a message using the server's private key
 def decrypt_key(session_key):
     # TODO: Implement this function
-
-    pass
+    aes = AES.new(session_key, AES.MODE_CBC, iv)
+    deKey = aes.decrypt(session_key)
+    return deKey
 
 
 # Write a function that decrypts a message using the session key
 def decrypt_message(client_message, session_key):
     # TODO: Implement this function
     aes = AES.new(session_key, AES.MODE_CBC, iv)
-        print("Length of decrypted",len(message))
-        mess = pad_message(message.decode())
-        mess = aes.decrypt(mess)
-        return mess
+    print("Length of decrypted",len(client_message))
+    mess = pad_message(client_message.decode())
+    mess = aes.decrypt(mess)
+    return mess
 
 
 # Encrypt a message using the session key
 def encrypt_message(message, session_key):
     # TODO: Implement this function
-    mess = message.encode()
-    enc = session_key.encrypt(mess)
+    print("Message:", message, "IV", len(iv))
+    aes = AES.new(session_key, AES.MODE_CBC, iv)
+    mess = pad_message(message)
+    print("Length of message",len(mess))
+    enc = aes.encrypt(mess)
     return enc
-
 
 # Receive 1024 bytes from the client
 def receive_message(connection):
