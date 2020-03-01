@@ -20,7 +20,9 @@ import subprocess
 import argparse
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
 import Crypto.Cipher.AES as AES
 import random
 
@@ -64,15 +66,23 @@ def generate_key():
 def encrypt_handshake(session_key):
     # TODO: Implement this function
     with open("id_rsa.pem", "rb") as file:
-        private_key = serialization.load_pem_public_key(
+        public_key = serialization.load_pem_public_key(
             file.read(),
             backend=default_backend()
         )
-        pem = private_key.public_bytes(
+        pem = public_key.public_bytes(
             encoding=serialization.Encoding.OpenSSH,
             format=serialization.PublicFormat.OpenSSH
         )
-        return pem
+        encrypted = public_key.encrypt(
+            session_key,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+        return encrypted
     pass
 
 
@@ -82,7 +92,7 @@ def encrypt_message(message, session_key):
     print("Message:", message, "IV", len(iv))
     aes = AES.new(session_key, AES.MODE_CBC, iv)
     mess = pad_message(message)
-    print("Length of message",len(mess))
+    print("Length of message", len(mess))
     enc = aes.encrypt(mess)
     return enc
 
@@ -91,7 +101,7 @@ def encrypt_message(message, session_key):
 def decrypt_message(message, session_key):
     # TODO: Implement this function
     aes = AES.new(session_key, AES.MODE_CBC, iv)
-    print("Length of decrypted",len(message))
+    print("Length of decrypted", len(message))
     mess = pad_message(message.decode())
     mess = aes.decrypt(mess)
     return mess

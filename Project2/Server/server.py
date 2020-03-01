@@ -25,14 +25,18 @@ import argparse
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
 import Crypto.Cipher.AES as AES
 import random
 
 host = "localhost"
 port = 10001
-
+iv = os.urandom(16)
 
 # A helper function. It may come in handy when performing symmetric encryption
+
+
 def pad_message(message):
     return message + " " * ((16 - len(message)) % 16)
 
@@ -40,16 +44,34 @@ def pad_message(message):
 # Write a function that decrypts a message using the server's private key
 def decrypt_key(session_key):
     # TODO: Implement this function
-    aes = AES.new(session_key, AES.MODE_CBC, iv)
-    deKey = aes.decrypt(session_key)
-    return deKey
+    os.chdir(os.getcwd()+"/Project2/Project2/priv_ssh_dir")
+    with open("id_rsa", "rb") as file:
+        # pem = file.private_bytes(
+        #     encoding=serialization.Encoding.OpenSSH,
+        #     format=serialization.PublicFormat.OpenSSH
+        # )
+        private_key = serialization.load_pem_private_key(
+            file.read(),
+            backend=default_backend(),
+            password=None
+        )
+
+    original_message = private_key.decrypt(
+        session_key,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+    return original_message
 
 
 # Write a function that decrypts a message using the session key
 def decrypt_message(client_message, session_key):
     # TODO: Implement this function
     aes = AES.new(session_key, AES.MODE_CBC, iv)
-    print("Length of decrypted",len(client_message))
+    print("Length of decrypted", len(client_message))
     mess = pad_message(client_message.decode())
     mess = aes.decrypt(mess)
     return mess
@@ -61,11 +83,13 @@ def encrypt_message(message, session_key):
     print("Message:", message, "IV", len(iv))
     aes = AES.new(session_key, AES.MODE_CBC, iv)
     mess = pad_message(message)
-    print("Length of message",len(mess))
+    print("Length of message", len(mess))
     enc = aes.encrypt(mess)
     return enc
 
 # Receive 1024 bytes from the client
+
+
 def receive_message(connection):
     return connection.recv(1024)
 
