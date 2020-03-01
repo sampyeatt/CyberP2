@@ -38,8 +38,11 @@ def decrypt_key(session_key):
 # Write a function that decrypts a message using the session key
 def decrypt_message(client_message, session_key):
     # TODO: Implement this function
-    mess = session_key.decrypt(client_message)
-    return mess
+    aes = AES.new(session_key, AES.MODE_CBC, iv)
+        print("Length of decrypted",len(message))
+        mess = pad_message(message.decode())
+        mess = aes.decrypt(mess)
+        return mess
 
 
 # Encrypt a message using the session key
