@@ -21,10 +21,14 @@ import argparse
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
+import Crypto.Cipher.AES as AES
+import random
 
 PRIV_SSH_DIR = os.getcwd() + "/Project2/Project2/priv_ssh_dir"
 host = "localhost"
 port = 10001
+cur_path = os.getcwd()
+iv = os.urandom(16)
 
 
 def key_present():
@@ -42,38 +46,54 @@ def pad_message(message):
 
 # TODO: Generate a cryptographically random AES key
 def generate_key():
-    print(os.getcwd())
+    # print(os.getcwd())
     os.chdir(PRIV_SSH_DIR)
     if key_present():
         print("Key already exists")
+        return os.urandom(32)
     else:
-        key = rsa.generate_private_key(backend=default_backend(), public_exponent=65537,
-                                       key_size=2048)
-        print("testing key is", key)
-    return key
-    # TODO: Implement this function
+        subprocess.call('ssh-keygen', shell=True)
+        subprocess.call(
+            'ssh-keygen -f id_rsa -e -m pem > id_rsa.pem', shell=True)
+        # subprocess.call('ssh-keygen -f id_rsa -e -m pem > id_rsa.pem', shell=True)
+        return os.urandom(32)
 
 
 # Takes an AES session key and encrypts it using the appropriate
 # key and return the value
 def encrypt_handshake(session_key):
     # TODO: Implement this function
-
+    with open("id_rsa.pem", "rb") as file:
+        private_key = serialization.load_pem_public_key(
+            file.read(),
+            backend=default_backend()
+        )
+        pem = private_key.public_bytes(
+            encoding=serialization.Encoding.OpenSSH,
+            format=serialization.PublicFormat.OpenSSH
+        )
+        return pem
     pass
 
 
 # Encrypts the message using AES. Same as server function
 def encrypt_message(message, session_key):
     # TODO: Implement this function
-    mess = message.encode()
-    enc = session_key.encrypt(mess)
+    print("Message:", message, "IV", len(iv))
+    aes = AES.new(session_key, AES.MODE_CBC, iv)
+    mess = pad_message(message)
+    print("Length of message",len(mess))
+    enc = aes.encrypt(mess)
     return enc
 
 
 # Decrypts the message using AES. Same as server function
 def decrypt_message(message, session_key):
     # TODO: Implement this function
-    mess = session_key.decrypt(message)
+    aes = AES.new(session_key, AES.MODE_CBC, iv)
+    print("Length of decrypted",len(message))
+    mess = pad_message(message.decode())
+    mess = aes.decrypt(mess)
     return mess
 
 
@@ -99,7 +119,8 @@ def main():
     server_address = (host, port)
     print('connecting to {} port {}'.format(*server_address))
     sock.connect(server_address)
-
+    # server_string = sock.recv(1024)
+    # print(server_string)
     try:
         # Message that we need to send
         message = user + ' ' + password
@@ -119,8 +140,15 @@ def main():
             exit(0)
 
         # TODO: Encrypt message and send to server
+        mess = encrypt_message(message, key)
+        send_message(sock, mess)
 
         # TODO: Receive and decrypt response from server
+        res = receive_message(sock)
+        if(res == None):
+            res = "Example"
+        result = decrypt_message(res, key)
+        print(result)
     finally:
         print('closing socket')
         sock.close()
