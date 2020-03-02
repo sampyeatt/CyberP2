@@ -23,7 +23,8 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
-import Crypto.Cipher.AES as AES
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+# import Crypto.Cipher.AES as AES
 import random
 from cryptography.fernet import Fernet
 
@@ -33,6 +34,7 @@ host = "localhost"
 port = 10001
 cur_path = os.getcwd()
 iv = os.urandom(16)
+s_key = os.urandom(16)
 
 
 def key_present():
@@ -54,18 +56,50 @@ def generate_key():
     os.chdir(PRIV_SSH_DIR)
     if key_present():
         print("Key already exists")
-        return os.urandom(32)
+        # key = Fernet.generate_key()
+        # f = Fernet(key)
+        # return f
+        return Cipher(algorithms.AES(s_key), modes.CBC(iv), backend=default_backend())
+    # key = Fernet.generate_key()
+        # return s_key
+    # f = Fernet(key)
+    # return f
     else:
+
         #subprocess.call('ssh-keygen', shell=True)
-        #subprocess.call(
+        # subprocess.call(
         #    'ssh-keygen -f id_rsa -e -m pem > id_rsa.pem', shell=True)
         # subprocess.call('ssh-keygen -f id_rsa -e -m pem > id_rsa.pem', shell=True)
-        key = Fernet.generate_key()
-        f = Fernet(key)
-        return f
-        #return os.urandom(32)
+        # key = Fernet.generate_key()
+        # f = Fernet(key)
+        # return f
 
+        # generate private/public key pair
+        key = rsa.generate_private_key(backend=default_backend(), public_exponent=65537,
+                                       key_size=1024)
 
+        # get public key in OpenSSH format
+        public_key = key.public_key().public_bytes(serialization.Encoding.OpenSSH,
+                                                   serialization.PublicFormat.OpenSSH)
+
+        # get private key in PEM container format
+        pem = key.private_bytes(encoding=serialization.Encoding.PEM,
+                                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                                encryption_algorithm=serialization.NoEncryption())
+        # decode to printable strings
+        private_key_str = pem.decode('utf-8')
+        public_key_str = public_key.decode('utf-8')
+        f = open("id_rsa", "wb+")
+        f.write(pem)
+        f.close()
+        f = open("id_rsa.pem", "wb+")
+        f.write(public_key)
+        f.close()
+        # key = Fernet.generate_key()
+        # f = Fernet(key)
+        # return f
+        return Cipher(algorithms.AES(s_key), modes.CBC(iv), backend=default_backend())
+        # return s_key
 
 
 # Takes an AES session key and encrypts it using the appropriate
@@ -73,16 +107,21 @@ def generate_key():
 def encrypt_handshake(session_key):
     # TODO: Implement this function
     with open("id_rsa.pem", "rb") as file:
-        public_key = serialization.load_pem_public_key(
+        public_key = serialization.load_ssh_public_key(
             file.read(),
             backend=default_backend()
         )
-        pem = public_key.public_bytes(
-            encoding=serialization.Encoding.OpenSSH,
-            format=serialization.PublicFormat.OpenSSH
-        )
+        # pem = public_key.public_bytes(
+        #     encoding=serialization.Encoding.OpenSSH,
+        #     format=serialization.PublicFormat.OpenSSH
+        # )
+        # print(s_key + b'\x20' + iv)
+        # print(iv)
+        # print(s_key)
+        
+        # print("The space is", b'\x20'.decode(), "this thing",sep=" ")
         encrypted = public_key.encrypt(
-            session_key,
+            s_key + b"\x20" + iv,
             padding.OAEP(
                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
                 algorithm=hashes.SHA256(),
@@ -96,25 +135,30 @@ def encrypt_handshake(session_key):
 # Encrypts the message using AES. Same as server function
 def encrypt_message(message, session_key):
     # TODO: Implement this function
-    print("Message:", message, "IV", len(iv))
-    aes = AES.new(session_key, AES.MODE_CBC, iv)
+    # print("Message:", message, "IV", len(iv))
+    encryptor = session_key.encryptor()
     mess = pad_message(message)
-    print("Length of message", len(mess))
-    enc = aes.encrypt(mess)
-    return enc
+    ct = encryptor.update(mess.encode()) + encryptor.finalize()
+    return ct
 
 
 # Decrypts the message using AES. Same as server function
 def decrypt_message(message, session_key):
     # TODO: Implement this function
-    aes = AES.new(session_key, AES.MODE_CBC, iv)
-    print("Length of decrypted", len(message))
-    mess = pad_message(message.decode())
-    mess = aes.decrypt(mess)
-    return mess
+    # print("Length of decrypted", len(message))
+    decryptor = session_key.decryptor()
+    ct = decryptor.update(message) + decryptor.finalize()
+    return ct
 
+# def encrypt_message(message,session_key):
+#     return session_key.encrypt(message)
+
+# def decrypt_message(message, session_key):
+#     return session_key.decrypt(message)
 
 # Sends a message over TCP
+
+
 def send_message(sock, message):
     sock.sendall(message)
 
@@ -144,7 +188,7 @@ def main():
 
         # Generate random AES key
         key = generate_key()
-
+        # print("Key is", key)
         # Encrypt the session key using server's public key
         encrypted_key = encrypt_handshake(key)
 
