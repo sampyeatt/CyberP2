@@ -30,7 +30,8 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import random
 from cryptography.fernet import Fernet
-import hashlib, binascii
+import hashlib
+import binascii
 
 host = "localhost"
 port = 10001
@@ -90,6 +91,7 @@ def decrypt_message(message, session_key):
     decryptor = session_key.decryptor()
     ct = decryptor.update(message) + decryptor.finalize()
     return ct
+
 
 def receive_message(connection):
     return connection.recv(1024)

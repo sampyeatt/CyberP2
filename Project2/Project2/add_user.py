@@ -6,28 +6,23 @@
     The solution contains the same number of lines (plus imports)
 """
 
+import os
+import binascii
+import hashlib
+import random
 user = input("Enter a username: ")
 password = input("Enter a password: ")
+salt = 0
+
 
 # TODO: Create a salt and hash the password
-salt = 0
-# hashed_password
-
-import random
-import hashlib, binascii, os
-
-# ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-# salt=[]
-# for i in range(16):
-#     salt.append(random.choice(ALPHABET))
-
-# "".join(salt)
-
 def hash_password(password):
     salt = hashlib.sha256(os.urandom(60)).hexdigest().encode('ascii')
-    pwdhash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
+    pwdhash = hashlib.pbkdf2_hmac(
+        'sha256', password.encode('utf-8'), salt, 100000)
     pwdhash = binascii.hexlify(pwdhash)
     return pwdhash
+
 
 hashed_password = hash_password(password)
 
