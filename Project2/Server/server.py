@@ -34,7 +34,6 @@ import hashlib, binascii
 
 host = "localhost"
 port = 10001
-# iv = os.urandom(16)
 
 # A helper function. It may come in handy when performing symmetric encryption
 
@@ -46,7 +45,9 @@ def pad_message(message):
 # Write a function that decrypts a message using the server's private key
 def decrypt_key(session_key):
     # TODO: Implement this function
+    # Opening private key file
     with open("id_rsa", "rb") as file:
+        # Loading private key
         private_key = serialization.load_pem_private_key(
             file.read(),
             backend=default_backend(),
@@ -57,7 +58,7 @@ def decrypt_key(session_key):
             format=serialization.PrivateFormat.TraditionalOpenSSL,
             encryption_algorithm=serialization.NoEncryption()
         )
-
+    # Decrypting with private key
     original_message = private_key.decrypt(
         session_key,
         padding.OAEP(
@@ -66,21 +67,18 @@ def decrypt_key(session_key):
             label=None
         )
     )
-    # print(original_message.decode())
-    # print(original_message)
-    original_message = original_message
+    # Splitting decrypted into initialization vector and key
     iv = original_message.rsplit(b"\x20", 1)[1]
     aes = original_message.rsplit(b"\x20", 1)[0]
-    # print(iv)
-    # print(aes)
+    # Generating AES key identical to client key
     return Cipher(algorithms.AES(aes), modes.CBC(iv), backend=default_backend())
 
 
 # Write a function that decrypts a message using the session key
 def encrypt_message(message, session_key):
     # TODO: Implement this function
-    # print("Message:", message, "IV", len(iv))
     encryptor = session_key.encryptor()
+    # Padding message for AES encryption
     mess = pad_message(message)
     ct = encryptor.update(mess) + encryptor.finalize()
     return ct
@@ -89,18 +87,9 @@ def encrypt_message(message, session_key):
 # Decrypts the message using AES. Same as server function
 def decrypt_message(message, session_key):
     # TODO: Implement this function
-    # print("Length of decrypted", len(message))
     decryptor = session_key.decryptor()
     ct = decryptor.update(message) + decryptor.finalize()
     return ct
-
-# def encrypt_message(message,session_key):
-#     return session_key.encrypt(message)
-
-# def decrypt_message(message, session_key):
-#     return session_key.decrypt(message)
-# Receive 1024 bytes from the client
-
 
 def receive_message(connection):
     return connection.recv(1024)
@@ -127,7 +116,6 @@ def verify_hash(user, password):
             line = line.split("\t")
             if line[0] == user:
                 # TODO: Generate the hashed password
-                print("Got this far")
                 salt = hashlib.sha256(os.urandom(
                     60)).hexdigest().encode('ascii')
                 pwdhash = hashlib.pbkdf2_hmac(
@@ -152,7 +140,6 @@ def main():
     sock.bind(server_address)
     sock.listen(1)
     # For getting keys
-
     try:
         while True:
             # Wait for a connection
@@ -170,7 +157,6 @@ def main():
 
                 # Decrypt key from client
                 plaintext_key = decrypt_key(encrypted_key)
-                # print("Plaintext Key", plaintext_key)
 
                 # Receive encrypted message from client
                 ciphertext_message = receive_message(connection)
@@ -179,21 +165,19 @@ def main():
                 clientMes = decrypt_message(ciphertext_message, plaintext_key)
 
                 # TODO: Split response from user into the username and password
-
-                # print("Client message to be parsed", clientMes.decode())
                 clientMes = clientMes.decode()
-                # TODO: parse the message
                 username = clientMes.rsplit(" ")[0]
                 password = clientMes.rsplit(" ")[1]
+
+                # TODO: parse the message
                 ciphertext_message = verify_hash(username, password)
+
                 # TODO: Encrypt response to client
                 mess = encrypt_message(
                     str(ciphertext_message).encode(), plaintext_key)
-                send_message(connection, mess)
 
                 # # Send encrypted response
-                # # ciphertext_response = "testing"
-                # send_message(connection, ciphertext_response)
+                send_message(connection, mess)
             finally:
                 # Clean up the connection
                 connection.close()

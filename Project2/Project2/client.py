@@ -24,7 +24,6 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-# import Crypto.Cipher.AES as AES
 import random
 from cryptography.fernet import Fernet
 
@@ -32,8 +31,9 @@ from cryptography.fernet import Fernet
 PRIV_SSH_DIR = os.getcwd() + "/Project2/Project2/priv_ssh_dir"
 host = "localhost"
 port = 10001
-cur_path = os.getcwd()
+# Initialization Vector for AES generation
 iv = os.urandom(16)
+# Random bytes for AES generation
 s_key = os.urandom(16)
 
 
@@ -52,28 +52,12 @@ def pad_message(message):
 
 # TODO: Generate a cryptographically random AES key
 def generate_key():
-    # print(os.getcwd())
     os.chdir(PRIV_SSH_DIR)
     if key_present():
         print("Key already exists")
-        # key = Fernet.generate_key()
-        # f = Fernet(key)
-        # return f
+        # generating random AES key with initialization vector iv
         return Cipher(algorithms.AES(s_key), modes.CBC(iv), backend=default_backend())
-    # key = Fernet.generate_key()
-        # return s_key
-    # f = Fernet(key)
-    # return f
     else:
-
-        #subprocess.call('ssh-keygen', shell=True)
-        # subprocess.call(
-        #    'ssh-keygen -f id_rsa -e -m pem > id_rsa.pem', shell=True)
-        # subprocess.call('ssh-keygen -f id_rsa -e -m pem > id_rsa.pem', shell=True)
-        # key = Fernet.generate_key()
-        # f = Fernet(key)
-        # return f
-
         # generate private/public key pair
         key = rsa.generate_private_key(backend=default_backend(), public_exponent=65537,
                                        key_size=1024)
@@ -89,37 +73,30 @@ def generate_key():
         # decode to printable strings
         private_key_str = pem.decode('utf-8')
         public_key_str = public_key.decode('utf-8')
+        # Writing private key to file
         f = open("id_rsa", "wb+")
         f.write(pem)
         f.close()
+        # Writing the public key to file
         f = open("id_rsa.pem", "wb+")
         f.write(public_key)
         f.close()
-        # key = Fernet.generate_key()
-        # f = Fernet(key)
-        # return f
+        # generating random AES key with initialization vector iv
         return Cipher(algorithms.AES(s_key), modes.CBC(iv), backend=default_backend())
-        # return s_key
 
 
 # Takes an AES session key and encrypts it using the appropriate
 # key and return the value
 def encrypt_handshake(session_key):
     # TODO: Implement this function
+    # Open public key file
     with open("id_rsa.pem", "rb") as file:
+        # Loading public key
         public_key = serialization.load_ssh_public_key(
             file.read(),
             backend=default_backend()
         )
-        # pem = public_key.public_bytes(
-        #     encoding=serialization.Encoding.OpenSSH,
-        #     format=serialization.PublicFormat.OpenSSH
-        # )
-        # print(s_key + b'\x20' + iv)
-        # print(iv)
-        # print(s_key)
-        
-        # print("The space is", b'\x20'.decode(), "this thing",sep=" ")
+        # Encrypting session key and initialization vector to send to server
         encrypted = public_key.encrypt(
             s_key + b"\x20" + iv,
             padding.OAEP(
@@ -135,8 +112,8 @@ def encrypt_handshake(session_key):
 # Encrypts the message using AES. Same as server function
 def encrypt_message(message, session_key):
     # TODO: Implement this function
-    # print("Message:", message, "IV", len(iv))
     encryptor = session_key.encryptor()
+    # Padding message for AES encryption
     mess = pad_message(message)
     ct = encryptor.update(mess.encode()) + encryptor.finalize()
     return ct
@@ -145,16 +122,9 @@ def encrypt_message(message, session_key):
 # Decrypts the message using AES. Same as server function
 def decrypt_message(message, session_key):
     # TODO: Implement this function
-    # print("Length of decrypted", len(message))
     decryptor = session_key.decryptor()
     ct = decryptor.update(message) + decryptor.finalize()
     return ct
-
-# def encrypt_message(message,session_key):
-#     return session_key.encrypt(message)
-
-# def decrypt_message(message, session_key):
-#     return session_key.decrypt(message)
 
 # Sends a message over TCP
 
@@ -180,15 +150,13 @@ def main():
     server_address = (host, port)
     print('connecting to {} port {}'.format(*server_address))
     sock.connect(server_address)
-    # server_string = sock.recv(1024)
-    # print(server_string)
     try:
         # Message that we need to send
         message = user + ' ' + password
 
         # Generate random AES key
         key = generate_key()
-        # print("Key is", key)
+
         # Encrypt the session key using server's public key
         encrypted_key = encrypt_handshake(key)
 
@@ -207,8 +175,10 @@ def main():
         # TODO: Receive and decrypt response from server
         res = receive_message(sock)
         result = decrypt_message(res, key)
-        print(result.decode())
-        
+        if(result.decode()):
+            print("User successfully authenticated!")
+        else:
+            print("Password or username incorrect")
     finally:
         print('closing socket')
         sock.close()
