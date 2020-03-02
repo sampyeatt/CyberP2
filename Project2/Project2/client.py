@@ -206,10 +206,9 @@ def main():
 
         # TODO: Receive and decrypt response from server
         res = receive_message(sock)
-        if(res == None):
-            res = "Example"
         result = decrypt_message(res, key)
-        print(result)
+        print(result.decode())
+        
     finally:
         print('closing socket')
         sock.close()

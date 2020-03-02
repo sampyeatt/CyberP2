@@ -45,7 +45,6 @@ def pad_message(message):
 # Write a function that decrypts a message using the server's private key
 def decrypt_key(session_key):
     # TODO: Implement this function
-    os.chdir(os.getcwd()+"/Project2/Project2/priv_ssh_dir")
     with open("id_rsa", "rb") as file:
         private_key = serialization.load_pem_private_key(
             file.read(),
@@ -81,7 +80,8 @@ def encrypt_message(message, session_key):
     # TODO: Implement this function
     # print("Message:", message, "IV", len(iv))
     encryptor = session_key.encryptor()
-    ct = encryptor.update(message) + encryptor.finalize()
+    mess = pad_message(message)
+    ct = encryptor.update(mess) + encryptor.finalize()
     return ct
 
 
@@ -142,6 +142,8 @@ def main():
     sock.bind(server_address)
     sock.listen(1)
 
+    os.chdir(os.getcwd()+"/Project2/Project2/priv_ssh_dir")
+
     try:
         while True:
             # Wait for a connection
@@ -168,18 +170,20 @@ def main():
 
                 # TODO: Split response from user into the username and password
 
-                print("Client message to be parsed", clientMes.decode())
+                # print("Client message to be parsed", clientMes.decode())
+                clientMes = clientMes.decode()
                 # TODO: parse the message
                 username = clientMes.rsplit(" ", 1)[0]
                 password = clientMes.rsplit(" ", 1)[1]
                 ciphertext_message = verify_hash(username, password)
                 # TODO: Encrypt response to client
-                mess = encrypt_message(ciphertext_message, plaintext_key)
-                send_message(sock, mess)
+                mess = encrypt_message(
+                    str(ciphertext_message).encode(), plaintext_key)
+                send_message(connection, mess)
 
-                # Send encrypted response
-                # ciphertext_response = "testing"
-                send_message(connection, ciphertext_response)
+                # # Send encrypted response
+                # # ciphertext_response = "testing"
+                # send_message(connection, ciphertext_response)
             finally:
                 # Clean up the connection
                 connection.close()
