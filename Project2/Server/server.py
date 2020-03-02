@@ -118,10 +118,9 @@ def verify_hash(user, password):
             line = line.split("\t")
             if line[0] == user:
                 # TODO: Generate the hashed password
-                salt = hashlib.sha256(os.urandom(
-                    60)).hexdigest().encode('ascii')
-                pwdhash = hashlib.pbkdf2_hmac(
-                    'sha256', password.encode('utf-8'), salt, 100000)
+                #salt = hashlib.sha256(os.urandom(60)).hexdigest().encode('ascii')
+                salt = line[1]
+                pwdhash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
                 pwdhash = binascii.hexlify(pwdhash)
                 print(pwdhash)
                 print(line[2])
