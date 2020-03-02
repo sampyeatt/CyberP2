@@ -171,11 +171,11 @@ def main():
 
                 # TODO: parse the message
                 print(clientMes)
-                ciphertext_message = verify_hash(username, password)
+                user_auth = verify_hash(username, password)
 
                 # TODO: Encrypt response to client
                 mess = encrypt_message(
-                    str(ciphertext_message).encode(), plaintext_key)
+                    str(user_auth).encode(), plaintext_key)
 
                 # # Send encrypted response
                 send_message(connection, mess)
