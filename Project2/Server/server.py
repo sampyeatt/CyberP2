@@ -30,6 +30,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import random
 from cryptography.fernet import Fernet
+import hashlib, binascii
 
 host = "localhost"
 port = 10001
@@ -120,15 +121,24 @@ def send_message(connection, data):
 # True if they are and False if they aren't. The delimiters are newlines and tabs
 def verify_hash(user, password):
     try:
+        os.chdir('../../../')
         reader = open("passfile.txt", 'r')
         for line in reader.read().split('\n'):
             line = line.split("\t")
             if line[0] == user:
                 # TODO: Generate the hashed password
-                # hashed_password =
-                return hashed_password == line[2]
+                print("Got this far")
+                salt = hashlib.sha256(os.urandom(
+                    60)).hexdigest().encode('ascii')
+                pwdhash = hashlib.pbkdf2_hmac(
+                    'sha256', password.encode('utf-8'), salt, 100000)
+                pwdhash = binascii.hexlify(pwdhash)
+                print(pwdhash)
+                print(line[2])
+                return pwdhash == line[2]
         reader.close()
     except FileNotFoundError:
+        print("File not found")
         return False
     return False
 
@@ -141,13 +151,13 @@ def main():
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(server_address)
     sock.listen(1)
-
-    os.chdir(os.getcwd()+"/Project2/Project2/priv_ssh_dir")
+    # For getting keys
 
     try:
         while True:
             # Wait for a connection
             print('waiting for a connection')
+            os.chdir(os.getcwd()+"/Project2/Project2/priv_ssh_dir")
             connection, client_address = sock.accept()
             try:
                 print('connection from', client_address)
@@ -173,8 +183,8 @@ def main():
                 # print("Client message to be parsed", clientMes.decode())
                 clientMes = clientMes.decode()
                 # TODO: parse the message
-                username = clientMes.rsplit(" ", 1)[0]
-                password = clientMes.rsplit(" ", 1)[1]
+                username = clientMes.rsplit(" ")[0]
+                password = clientMes.rsplit(" ")[1]
                 ciphertext_message = verify_hash(username, password)
                 # TODO: Encrypt response to client
                 mess = encrypt_message(
