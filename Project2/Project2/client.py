@@ -175,7 +175,7 @@ def main():
         # TODO: Receive and decrypt response from server
         res = receive_message(sock)
         result = decrypt_message(res, key)
-        if(result.decode()):
+        if(result.decode() == "True"):
             print("User successfully authenticated!")
         else:
             print("Password or username incorrect")
