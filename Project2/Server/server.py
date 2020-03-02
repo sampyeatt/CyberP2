@@ -170,6 +170,7 @@ def main():
                 password = clientMes.rsplit(" ")[1]
 
                 # TODO: parse the message
+                print(clientMes)
                 ciphertext_message = verify_hash(username, password)
 
                 # TODO: Encrypt response to client
