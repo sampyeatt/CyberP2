@@ -14,6 +14,7 @@ user = input("Enter a username: ")
 password = input("Enter a password: ")
 salt = 0
 
+
 # TODO: Create a salt and hash the password
 def hash_password(password):
     global salt
