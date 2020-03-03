@@ -175,15 +175,11 @@ def main():
         # TODO: Receive and decrypt response from server
         res = receive_message(sock)
         result = decrypt_message(res, key)
-        print(result.decode())
-        final = result.decode()
-        clean = final.replace(" ", "")
-        if(clean == True):
+        final = result.decode().strip()
+        if(final == 'True'):
             print("User successfully authenticated!")
         elif(final == "False"):
             print("Password or username incorrect")
-        else:
-            print("Ha! it didnt work you idiot")
     finally:
         print('closing socket')
         sock.close()
