@@ -37,5 +37,5 @@ except FileNotFoundError:
     pass
 
 with open("passfile.txt", 'a+') as writer:
-    writer.write("{0}\t{1}\t{2}\n".format(user, salt, hashed_password))
+    writer.write("{0}\t{1}\t{2}\n".format(user, salt.decode(), hashed_password.decode()))
     print("User successfully added!")

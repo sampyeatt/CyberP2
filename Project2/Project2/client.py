@@ -176,9 +176,10 @@ def main():
         res = receive_message(sock)
         result = decrypt_message(res, key)
         print(result.decode())
-        if(result.decode() == "True"):
+        final = result.decode()
+        if(final == 'True'):
             print("User successfully authenticated!")
-        else:
+        elif(final == "False"):
             print("Password or username incorrect")
     finally:
         print('closing socket')
