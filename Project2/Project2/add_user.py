@@ -12,11 +12,11 @@ import hashlib
 import random
 user = input("Enter a username: ")
 password = input("Enter a password: ")
-
+salt = hashlib.sha256(os.urandom(60)).hexdigest().encode('ascii')
 
 # TODO: Create a salt and hash the password
 def hash_password(password):
-    salt = hashlib.sha256(os.urandom(60)).hexdigest().encode('ascii')
+   # salt = hashlib.sha256(os.urandom(60)).hexdigest().encode('ascii')
     pwdhash = hashlib.pbkdf2_hmac(
         'sha256', password.encode('utf-8'), salt, 100000)
     pwdhash = binascii.hexlify(pwdhash)
